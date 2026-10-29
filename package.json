@@ -1,0 +1,12 @@
+{
+  "name": "scarlett-mono",
+  "private": true,
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "test": "bash scripts/test.sh",
+    "install": "python3 scripts/install.py",
+    "devices": "'build/Scarlett Mono.app/Contents/MacOS/ScarlettMono' --devices",
+    "check:layout": "'build/Scarlett Mono.app/Contents/MacOS/ScarlettMono' --check-layout",
+    "verify:recording": "python3 scripts/verify-recording.py"
+  }
+}
