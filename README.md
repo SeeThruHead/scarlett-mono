@@ -12,6 +12,18 @@ A separate BlackHole input callback checks the actual resulting audio. Only nume
 
 Devices are checked every two seconds. The bridge reconnects after device removal/reconnection, sample-rate changes or wake. A file lock prevents duplicate instances. Real-time buffers and counters are the mutable boundary; callbacks perform no allocation, locking, logging or filesystem work.
 
+## Install
+
+```
+brew install --cask blackhole-2ch
+brew install seethruhead/tap/scarlett-mono
+brew services start seethruhead/tap/scarlett-mono
+```
+
+## State for other tools
+
+Whenever the bridge state changes, the helper posts the `com.shanekeulen.ScarlettMono.state` distributed notification and writes the same values to `~/Library/Application Support/com.shanekeulen.ScarlettMono/state.json`. `state` is one of `running`, `connecting`, `paused`, `no-permission`, `waiting-scarlett`, `waiting-blackhole`, `error` or `stopped`; `channel`, `message`, `pid` and `updatedAt` come with it.
+
 ## Build and run
 
 Requires Apple Command Line Tools, Python 3 and pnpm. There are no downloaded runtime dependencies.
@@ -36,8 +48,8 @@ Signing uses a persistent local certificate stored in a dedicated keychain under
 
 ## Locations
 
-- App: `~/Applications/Scarlett Mono.app`
-- Startup: `~/Library/LaunchAgents/com.shanekeulen.ScarlettMono.plist`
+- App: `/opt/homebrew/opt/scarlett-mono/Scarlett Mono.app` (Homebrew), or `~/Applications/Scarlett Mono.app` from `pnpm run install`
+- Startup: `brew services` (`sh.brew.scarlett-mono`), or `~/Library/LaunchAgents/com.shanekeulen.ScarlettMono.plist` from `pnpm run install`
 - Status: `~/Library/Application Support/Scarlett Mono/status.json`
 - Logs: `~/Library/Logs/Scarlett Mono/`
 - Source: `~/code/scarlett-mono/`

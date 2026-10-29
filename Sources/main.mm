@@ -217,6 +217,7 @@ static void activateRoute(const std::shared_ptr<Route> &route) {
 @property BOOL paused;
 @property UInt32 channel;
 @property NSURL *statusURL;
+@property NSDictionary *lastBroadcast;
 @end
 
 @implementation MonoApp
@@ -328,10 +329,38 @@ static void activateRoute(const std::shared_ptr<Route> &route) {
     report[@"state"] = self.state;
     const auto data = [NSJSONSerialization dataWithJSONObject:report options:NSJSONWritingPrettyPrinted error:nil];
     [data writeToURL:self.statusURL options:NSDataWritingAtomic error:nil];
+    NSDictionary *tokens = @{
+        @"Microphone paused": @"paused",
+        @"Microphone permission required": @"no-permission",
+        @"Waiting for Scarlett": @"waiting-scarlett",
+        @"Waiting for BlackHole": @"waiting-blackhole",
+        @"Connecting microphone": @"connecting",
+        @"Mic running": @"running",
+    };
+    [self broadcast:@{
+        @"state": tokens[self.state] ?: @"error",
+        @"channel": [NSString stringWithFormat:@"%u", self.channel + 1],
+        @"message": self.state,
+    }];
+}
+- (void)broadcast:(NSDictionary *)fields {
+    if ([fields isEqualToDictionary:self.lastBroadcast]) return;
+    self.lastBroadcast = fields;
+    NSMutableDictionary *stamped = [fields mutableCopy];
+    stamped[@"pid"] = [NSString stringWithFormat:@"%d", NSProcessInfo.processInfo.processIdentifier];
+    stamped[@"updatedAt"] = [[NSISO8601DateFormatter new] stringFromDate:NSDate.date];
+    const auto folder = [[NSFileManager.defaultManager URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject
+        URLByAppendingPathComponent:@"com.shanekeulen.ScarlettMono"];
+    [NSFileManager.defaultManager createDirectoryAtURL:folder withIntermediateDirectories:YES attributes:nil error:nil];
+    [[NSJSONSerialization dataWithJSONObject:stamped options:NSJSONWritingSortedKeys error:nil]
+        writeToURL:[folder URLByAppendingPathComponent:@"state.json"] options:NSDataWritingAtomic error:nil];
+    [NSDistributedNotificationCenter.defaultCenter postNotificationName:@"com.shanekeulen.ScarlettMono.state"
+        object:nil userInfo:stamped deliverImmediately:YES];
 }
 - (void)applicationWillTerminate:(NSNotification *)notification {
     [self.timer invalidate];
     _route.reset();
+    [self broadcast:@{@"state": @"stopped"}];
 }
 @end
 
